@@ -132,7 +132,7 @@ with st.sidebar:
     st.subheader("🎛️ Bảng Điều Khiển")
     
     app_mode = st.selectbox(
-        "Chọn chế độ quét:",
+        "Chọn chế độ nhận diện:",
         ["🖼️ Phân Tích Hình Ảnh (Image)", "📡 Giám Sát Video (Live Stream)"],
         index=0
     )
@@ -339,3 +339,4 @@ elif "Video" in app_mode:
             out.release()
             st.balloons()
             st.success(f"✅ Phiên giám sát kết thúc. Video lưu tại: `{output_video_path}`")
+
