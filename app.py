@@ -7,13 +7,14 @@ import time
 import os
 import datetime
 import numpy as np
+import base64
 
 # ==========================================
 # 1. CẤU HÌNH TRANG (PAGE CONFIG)
 # ==========================================
 st.set_page_config(
     page_title="Human and animal detection with AI",
-    page_icon="🐾", # Icon dấu chân (Tracking)
+    page_icon="🐾",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -23,6 +24,14 @@ IMAGE_OUTPUT_FOLDER = "Image_output"
 VIDEO_OUTPUT_FOLDER = "Video_output"
 for folder in [IMAGE_OUTPUT_FOLDER, VIDEO_OUTPUT_FOLDER]:
     os.makedirs(folder, exist_ok=True)
+
+# --- HÀM HỖ TRỢ ĐỌC ẢNH LOCAL ---
+def get_base64_image(image_path):
+    try:
+        with open(image_path, "rb") as img_file:
+            return base64.b64encode(img_file.read()).decode()
+    except Exception as e:
+        return None
 
 # ==========================================
 # 2. CSS TÙY CHỈNH (PROFESSIONAL UI)
@@ -38,40 +47,40 @@ st.markdown("""
     /* 2. BANNER KỸ THUẬT SỐ */
     .custom-banner {
         width: 100%;
-        height: 220px;
+        height: 150px;
         overflow: hidden;
-        border-radius: 0px 0px 15px 15px; /* Bo tròn 2 góc dưới */
-        box-shadow: 0 10px 20px rgba(0,0,0,0.15); /* Bóng đổ sâu hơn */
+        border-radius: 0px 0px 15px 15px;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.15);
         position: relative;
     }
     .custom-banner img {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        object-position: center 30%; /* Căn chỉnh vị trí ảnh */
-        filter: brightness(0.9); /* Làm tối nhẹ ảnh để chữ nổi hơn nếu có */
+        object-position: center 30%;
+        filter: brightness(0.9);
     }
 
     /* 3. SIDEBAR HIỆN ĐẠI */
     [data-testid="stSidebar"] {
         min-width: 320px !important;
-        background-color: #f4f6f9; /* Màu xám xanh công nghệ */
+        background-color: #f4f6f9;
         border-right: 1px solid #e0e0e0;
     }
     
     /* 4. BUTTON CHUYÊN NGHIỆP */
     div.stButton > button {
-        background: linear-gradient(45deg, #1b5e20, #2e7d32); /* Gradient xanh quân đội */
+        background: linear-gradient(45deg, #1b5e20, #2e7d32);
         color: white;
         border-radius: 6px;
         height: 55px;
         font-size: 16px;
-        font-family: 'Roboto Mono', monospace; /* Font kỹ thuật */
+        font-family: 'Roboto Mono', monospace;
         font-weight: 700;
         border: none;
         box-shadow: 0 4px 10px rgba(46, 125, 50, 0.3);
         transition: all 0.3s ease;
-        text-transform: uppercase; /* Chữ in hoa */
+        text-transform: uppercase;
         letter-spacing: 1px;
     }
     div.stButton > button:hover {
@@ -79,7 +88,7 @@ st.markdown("""
         box-shadow: 0 6px 15px rgba(46, 125, 50, 0.4);
     }
 
-    /* 5. METRIC CARD (THẺ SỐ LIỆU) */
+    /* 5. METRIC CARD */
     .metric-card {
         background-color: white;
         padding: 15px;
@@ -90,35 +99,20 @@ st.markdown("""
         margin-bottom: 10px;
         transition: transform 0.2s;
     }
-    .metric-card:hover {
-        transform: scale(1.02);
-    }
-    .metric-value { 
-        font-size: 26px; 
-        font-weight: 800; 
-        color: #1b5e20; 
-        font-family: 'Segoe UI', sans-serif;
-    }
-    .metric-label { 
-        font-size: 11px; 
-        color: #555; 
-        text-transform: uppercase; 
-        font-weight: 600;
-        letter-spacing: 0.5px;
-    }
+    .metric-card:hover { transform: scale(1.02); }
+    .metric-value { font-size: 26px; font-weight: 800; color: #1b5e20; font-family: 'Segoe UI', sans-serif; }
+    .metric-label { font-size: 11px; color: #555; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
 
-    /* 6. HEADER CHỮ */
-    h1, h2, h3 {
-        font-family: 'Segoe UI', sans-serif;
-        color: #2c3e50;
-    }
+    h1, h2, h3 { font-family: 'Segoe UI', sans-serif; color: #2c3e50; }
     
-    /* Con trỏ chuột */
     [data-testid="stSidebar"] [data-baseweb="select"] { cursor: pointer !important; }
     [data-testid="stSidebar"] [data-baseweb="select"] * { cursor: pointer !important; }
     
-    /* Ẩn footer */
-    footer, header {visibility: hidden;}
+    /* --- SỬA LỖI MẤT NÚT MỞ SIDEBAR --- */
+    /* Chỉ ẩn footer, KHÔNG ẩn header để giữ lại nút mũi tên > */
+    footer {visibility: hidden;}
+    /* header {visibility: hidden;}  <-- Đã xóa dòng này */
+    
     </style>
     """, unsafe_allow_html=True)
 
@@ -131,19 +125,27 @@ def load_model(path):
 # 3. SIDEBAR (THANH ĐIỀU KHIỂN)
 # ==========================================
 with st.sidebar:
-    # Header Sidebar với icon Đại bàng (Tầm nhìn)
     st.markdown("<h2 style='text-align: center; color: #1b5e20; margin-bottom: 5px;'>🦅 Trần Văn Trọng <br>Nguyễn Thanh Hà</h2>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: #666; font-size: 12px;'><i>Human and animal detection with AI System v1.0</i></p>", unsafe_allow_html=True)
     st.markdown("---")
     
     st.subheader("🎛️ Bảng Điều Khiển")
     
-    # Selectbox với icon mô tả chức năng
     app_mode = st.selectbox(
         "Chọn chế độ quét:",
         ["🖼️ Phân Tích Hình Ảnh (Image)", "📡 Giám Sát Video (Live Stream)"],
         index=0
     )
+
+    st.markdown("---")
+
+    # --- [MỚI] PHẦN LỰA CHỌN BANNER ---
+    st.subheader("🖼️ Giao Diện Banner")
+    banner_choice = st.radio(
+        "Chọn chủ đề hình ảnh:",
+        ("Thiên Nhiên (File ảnh)","Công Nghệ (Server)","Công Nghệ (Online)")
+    )
+    # ----------------------------------
     
     st.markdown("---")
     
@@ -165,15 +167,41 @@ with st.sidebar:
 # 4. MAIN INTERFACE
 # ==========================================
 
-# --- BANNER ẢNH RỪNG (CỐ ĐỊNH 220PX) ---
-# Link ảnh chất lượng cao chủ đề Rừng/Núi
-BANNER_URL = "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?q=80&w=2000&auto=format&fit=crop"
+# --- XỬ LÝ HIỂN THỊ BANNER DỰA TRÊN LỰA CHỌN ---
+# 1. Nếu chọn Thiên Nhiên -> Dùng file local "banner_nature.jpg"
+if banner_choice == "Thiên Nhiên (File ảnh)":
+    local_file = "banner_nature.jpg"
+    img_base64 = get_base64_image(local_file)
+    if img_base64:
+        st.markdown(f"""
+            <div class="custom-banner">
+                <img src="data:image/jpeg;base64,{img_base64}">
+            </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.warning(f"⚠️ Không tìm thấy file '{local_file}'. Vui lòng copy ảnh vào thư mục code.")
 
-st.markdown(f"""
-    <div class="custom-banner">
-        <img src="{BANNER_URL}">
-    </div>
-""", unsafe_allow_html=True)
+# 2. Nếu chọn Công Nghệ -> Dùng link Online (Đẹp, hiện đại)
+else:
+    if banner_choice=="Công Nghệ (Server)":
+        local_file1 = "banner_server.jpg"
+        img_base64_2 = get_base64_image(local_file1)
+        if img_base64_2:
+            st.markdown(f"""
+                <div class="custom-banner">
+                    <img src="data:image/jpeg;base64,{img_base64_2}">
+                </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.warning(f"⚠️ Không tìm thấy file '{local_file1}'. Vui lòng copy ảnh vào thư mục code.")
+    else:
+        ONLINE_URL = "https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=2000&auto=format&fit=crop"
+        st.markdown(f"""
+        <div class="custom-banner">
+            <img src="{ONLINE_URL}">
+        </div>
+        """, unsafe_allow_html=True)
+# -----------------------------------------------
 
 # Load Model
 try:
@@ -183,7 +211,6 @@ except Exception as e:
     st.stop()
 
 # Header chính
-# Tách tên mode để hiển thị đẹp hơn
 mode_title = "IMAGERY INTELLIGENCE" if "Image" in app_mode else "VIDEO SURVEILLANCE"
 mode_icon = "📸" if "Image" in app_mode else "🎥"
 
@@ -208,7 +235,7 @@ if "Image" in app_mode:
             st.image(image, caption="Source Image", use_container_width=True)
             
             st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("⚡ KÍCH HOẠT QUÉT AI", type="primary"):
+            if st.button("⚡ KÍCH HOẠT NHẬN DIỆN", type="primary"):
                 with col_result:
                     st.markdown("### 🎯 Kết Quả Phân Tích")
                     with st.spinner('🔄 Đang xử lý thuật toán...'):
@@ -269,7 +296,7 @@ elif "Video" in app_mode:
             kpi_fps = st.empty()
             kpi_res = st.empty()
             st.markdown("<br>", unsafe_allow_html=True)
-            btn_start = st.button("▶️ BẮT ĐẦU GIÁM SÁT")
+            btn_start = st.button("▶️ CHẠY VIDEO", type="primary")
 
         if btn_start:
             cap = cv2.VideoCapture(video_path)
@@ -282,7 +309,7 @@ elif "Video" in app_mode:
             fourcc = cv2.VideoWriter_fourcc(*'mp4v') 
             out = cv2.VideoWriter(output_video_path, fourcc, fps_input, (width, height))
             
-            kpi_res.info(f"Res: {width}x{height} px")
+            kpi_res.info(f"Độ phân giải gốc: {width}x{height} px")
             prev_time = 0
             
             while cap.isOpened():
@@ -298,11 +325,11 @@ elif "Video" in app_mode:
                 
                 st_frame.image(res_plotted, channels="BGR", use_container_width=True)
                 
-                # Card FPS chuyên nghiệp hơn
+                # Card FPS
                 kpi_fps.markdown(f"""
                 <div class="metric-card" style="padding: 10px; border-left: 4px solid #d32f2f;">
                     <div class="metric-value" style="color: #d32f2f;">{int(fps_proc)}</div>
-                    <div class="metric-label">REAL-TIME FPS</div>
+                    <div class="metric-label">FPS THỰC TẾ</div>
                 </div>
                 """, unsafe_allow_html=True)
                 
